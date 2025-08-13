@@ -2,6 +2,8 @@
 
 This project is now configured for building and packaging as a mobile app.
 
+The app now saves posts and login information to your browser's local storage, making it usable beyond the mock data.
+
 ## Development
 
 ```bash

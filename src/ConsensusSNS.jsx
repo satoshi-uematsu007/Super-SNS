@@ -78,20 +78,53 @@ const ConsensusSNS = () => {
   const [newPost, setNewPost] = useState({ title: '', content: '', room: '環境問題' });
   const [showNewPost, setShowNewPost] = useState(false);
 
-  // ユーザー登録のモックデータ
+  // ユーザー登録フォームの入力データ
   const [registrationData, setRegistrationData] = useState({
     nickname: '',
     interests: [],
     attributes: { age: '', occupation: '' }
   });
 
+  // ローカルストレージから初期データを読み込む
+  useEffect(() => {
+    const storedPosts = localStorage.getItem('posts');
+    if (storedPosts) {
+      try {
+        setPosts(JSON.parse(storedPosts));
+      } catch (_) {
+        // ignore parse errors
+      }
+    }
+    const storedUser = localStorage.getItem('currentUser');
+    if (storedUser) {
+      try {
+        setCurrentUser(JSON.parse(storedUser));
+      } catch (_) {
+        // ignore parse errors
+      }
+    }
+  }, []);
+
+  // 投稿やログイン状態を保存
+  useEffect(() => {
+    localStorage.setItem('posts', JSON.stringify(posts));
+  }, [posts]);
+
+  useEffect(() => {
+    if (currentUser) {
+      localStorage.setItem('currentUser', JSON.stringify(currentUser));
+    }
+  }, [currentUser]);
+
   const handleLogin = () => {
-    setCurrentUser({
-      id: 1,
-      nickname: "統計好きユーザー",
-      cluster: "バランス派",
+    if (!registrationData.nickname) return;
+    const user = {
+      id: Date.now(),
+      nickname: registrationData.nickname,
+      cluster: 'バランス派',
       joinDate: new Date()
-    });
+    };
+    setCurrentUser(user);
   };
 
   const handleReaction = (postId, reaction) => {
