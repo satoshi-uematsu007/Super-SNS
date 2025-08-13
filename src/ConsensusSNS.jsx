@@ -1,18 +1,19 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  Users, 
-  MessageSquare, 
-  BarChart3, 
-  TrendingUp, 
-  Heart, 
-  X, 
+import {
+  Users,
+  MessageSquare,
+  BarChart3,
+  TrendingUp,
+  Heart,
+  X,
   Minus,
   Plus,
   User,
   Settings,
   Filter,
   Search,
-  Target
+  Target,
+  ThumbsUp
 } from 'lucide-react';
 
 const ConsensusSNS = () => {
@@ -26,6 +27,7 @@ const ConsensusSNS = () => {
       author: "環境派ユーザー",
       cluster: "環境重視派",
       reactions: { agree: 45, disagree: 23, neutral: 12 },
+      likes: 0,
       timestamp: new Date(Date.now() - 3600000),
       room: "環境問題"
     },
@@ -36,10 +38,13 @@ const ConsensusSNS = () => {
       author: "働き方改革派",
       cluster: "効率重視派",
       reactions: { agree: 67, disagree: 15, neutral: 8 },
+      likes: 0,
       timestamp: new Date(Date.now() - 7200000),
       room: "働き方"
     }
   ]);
+
+  const [likedPosts, setLikedPosts] = useState([]);
   
   const [clusters, setClusters] = useState([
     { 
@@ -103,6 +108,14 @@ const ConsensusSNS = () => {
         // ignore parse errors
       }
     }
+    const storedLikes = localStorage.getItem('likedPosts');
+    if (storedLikes) {
+      try {
+        setLikedPosts(JSON.parse(storedLikes));
+      } catch (_) {
+        // ignore parse errors
+      }
+    }
   }, []);
 
   // 投稿やログイン状態を保存
@@ -115,6 +128,10 @@ const ConsensusSNS = () => {
       localStorage.setItem('currentUser', JSON.stringify(currentUser));
     }
   }, [currentUser]);
+
+  useEffect(() => {
+    localStorage.setItem('likedPosts', JSON.stringify(likedPosts));
+  }, [likedPosts]);
 
   const handleLogin = () => {
     if (!registrationData.nickname) return;
@@ -142,6 +159,24 @@ const ConsensusSNS = () => {
     }));
   };
 
+  const handleLike = (postId) => {
+    if (likedPosts.includes(postId)) {
+      setLikedPosts(likedPosts.filter(id => id !== postId));
+      setPosts(posts.map(post =>
+        post.id === postId
+          ? { ...post, likes: Math.max((post.likes || 0) - 1, 0) }
+          : post
+      ));
+    } else {
+      setLikedPosts([...likedPosts, postId]);
+      setPosts(posts.map(post =>
+        post.id === postId
+          ? { ...post, likes: (post.likes || 0) + 1 }
+          : post
+      ));
+    }
+  };
+
   const addPost = () => {
     if (newPost.title && newPost.content) {
       const post = {
@@ -151,6 +186,7 @@ const ConsensusSNS = () => {
         author: currentUser.nickname,
         cluster: currentUser.cluster,
         reactions: { agree: 0, disagree: 0, neutral: 0 },
+        likes: 0,
         timestamp: new Date(),
         room: newPost.room
       };
@@ -311,30 +347,41 @@ const ConsensusSNS = () => {
                     </div>
                   </div>
                   
-                  {/* リアクションボタン */}
-                  <div className="flex items-center space-x-4 pt-4 border-t">
-                    <button
-                      onClick={() => handleReaction(post.id, 'agree')}
-                      className="flex items-center space-x-2 px-3 py-1 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
-                    >
-                      <Heart className="w-4 h-4" />
-                      <span>賛成 {post.reactions.agree}</span>
-                    </button>
-                    <button
-                      onClick={() => handleReaction(post.id, 'disagree')}
-                      className="flex items-center space-x-2 px-3 py-1 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
-                    >
-                      <X className="w-4 h-4" />
-                      <span>反対 {post.reactions.disagree}</span>
-                    </button>
-                    <button
-                      onClick={() => handleReaction(post.id, 'neutral')}
-                      className="flex items-center space-x-2 px-3 py-1 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
-                    >
-                      <Minus className="w-4 h-4" />
-                      <span>中立 {post.reactions.neutral}</span>
-                    </button>
-                  </div>
+                    {/* リアクションボタン */}
+                    <div className="flex items-center space-x-4 pt-4 border-t">
+                      <button
+                        onClick={() => handleLike(post.id)}
+                        className={`flex items-center space-x-2 px-3 py-1 rounded-full transition-colors ${
+                          likedPosts.includes(post.id)
+                            ? 'bg-pink-100 text-pink-600'
+                            : 'bg-pink-50 text-pink-600 hover:bg-pink-100'
+                        }`}
+                      >
+                        <Heart className={`w-4 h-4 ${likedPosts.includes(post.id) ? 'fill-current' : ''}`} />
+                        <span>いいね {post.likes || 0}</span>
+                      </button>
+                      <button
+                        onClick={() => handleReaction(post.id, 'agree')}
+                        className="flex items-center space-x-2 px-3 py-1 rounded-full bg-green-50 text-green-600 hover:bg-green-100 transition-colors"
+                      >
+                        <ThumbsUp className="w-4 h-4" />
+                        <span>賛成 {post.reactions.agree}</span>
+                      </button>
+                      <button
+                        onClick={() => handleReaction(post.id, 'disagree')}
+                        className="flex items-center space-x-2 px-3 py-1 rounded-full bg-red-50 text-red-600 hover:bg-red-100 transition-colors"
+                      >
+                        <X className="w-4 h-4" />
+                        <span>反対 {post.reactions.disagree}</span>
+                      </button>
+                      <button
+                        onClick={() => handleReaction(post.id, 'neutral')}
+                        className="flex items-center space-x-2 px-3 py-1 rounded-full bg-gray-50 text-gray-600 hover:bg-gray-100 transition-colors"
+                      >
+                        <Minus className="w-4 h-4" />
+                        <span>中立 {post.reactions.neutral}</span>
+                      </button>
+                    </div>
                 </div>
               ))}
             </div>
