@@ -1,0 +1,6 @@
+{
+  "appId": "com.example.supersns",
+  "appName": "Super SNS",
+  "webDir": "dist",
+  "bundledWebRuntime": false
+}
